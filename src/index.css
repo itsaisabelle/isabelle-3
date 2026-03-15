@@ -1,0 +1,43 @@
+:root {
+  --page: #efe8d4;
+  --ink: #243746;
+  --ink-soft: #3f5968;
+  --line: #c8c2ad;
+  --line-strong: #958f78;
+  --focus: #bd5f25;
+  --node: #4f7a86;
+  --link: #6e8d44;
+
+  font-family: 'Trebuchet MS', 'Gill Sans', 'Segoe UI', sans-serif;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    linear-gradient(155deg, rgba(236, 218, 171, 0.48), rgba(201, 218, 200, 0.48)),
+    var(--page);
+}
+
+h1,
+h2,
+h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--ink);
+}

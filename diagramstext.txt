@@ -1,0 +1,274 @@
+=== SEQUENCE DIAGRAM: Event Creation & RSVP (Scenario 2) ===
+
+--- NODES (Lifelines) ---
+NODE [L1] Daniel (Actor - Officer)
+NODE [L2] Student_A (Actor - Student)
+NODE [L3] Student_B (Actor - Student)
+NODE [L4] CampusConnect_UI (System - UI/Controller)
+NODE [L5] EventController_EventDB (System - Backend + Persistence)
+
+--- LINKS (Messages in chronological order) ---
+LINK [M01] L1 -> L4 | SYNCHRONOUS | login(danielCredentials)
+LINK [M02] L4 -> L5 | SYNCHRONOUS | authenticate()
+LINK [M03] L5 -> L4 | RETURN      | sessionToken
+LINK [M04] L4 -> L1 | RETURN      | loginConfirmed
+
+LINK [M05] L1 -> L4 | SYNCHRONOUS | createEvent(title, desc, date, loc, maxCap)
+LINK [M06] L4 -> L5 | SYNCHRONOUS | storeEvent(eventData)
+LINK [M07] L5 -> L4 | RETURN      | eventID
+LINK [M08] L4 -> L1 | RETURN      | eventCreatedConfirmation
+
+LINK [M09] L2 -> L4 | SYNCHRONOUS | rsvpToEvent(studentA, eventID)
+LINK [M10] L4 -> L5 | SYNCHRONOUS | checkCapacity(eventID)
+LINK [M11] L5 -> L4 | RETURN      | capacityOK (seats available)
+LINK [M12] L4 -> L2 | RETURN      | rsvpConfirmed
+
+LINK [M13] L3 -> L4 | SYNCHRONOUS | rsvpToEvent(studentB, eventID)
+LINK [M14] L4 -> L5 | SYNCHRONOUS | checkCapacity(eventID)
+LINK [M15] L5 -> L4 | RETURN      | capacityFull
+LINK [M16] L4 -> L3 | RETURN      | eventFullNotification
+
+LINK [M17] L2 -> L4 | SYNCHRONOUS | cancelRsvp(studentA, eventID)
+LINK [M18] L4 -> L5 | SYNCHRONOUS | updateCapacity(+1)
+LINK [M19] L5 -> L4 | RETURN      | capacityUpdated
+LINK [M20] L4 -> L2 | RETURN      | cancellationConfirmed
+
+LINK [M21] L3 -> L4 | SYNCHRONOUS | rsvpToEvent(studentB, eventID)
+LINK [M22] L4 -> L5 | SYNCHRONOUS | checkCapacity(eventID)
+LINK [M23] L5 -> L4 | RETURN      | capacityOK
+LINK [M24] L4 -> L3 | RETURN      | rsvpConfirmed
+
+--- CONSTRAINTS ---
+CONSTRAINT: M13-M16 only occurs when currentRsvpCount >= maxCapacity
+CONSTRAINT: M21-M24 only possible after a cancellation frees a slot (M17-M20)
+
+
+=== SYSTEM SEQUENCE DIAGRAM: Priya Views Dashboard (Scenario 3) ===
+
+--- NODES (Lifelines) ---
+NODE [L1] Priya (External Actor - Student)
+NODE [L2] CampusConnect (System - black box, internals hidden)
+
+--- LINKS (Input/Output messages in chronological order) ---
+LINK [M1] L1 -> L2 | INPUT  | login(priyaCredentials)
+LINK [M2] L2 -> L1 | OUTPUT | sessionToken, loginSuccess
+
+LINK [M3] L1 -> L2 | INPUT  | viewProfileDashboard()
+LINK [M4] L2 -> L1 | OUTPUT | profilePage(orgList, upcomingEvents)
+
+LINK [M5] L1 -> L2 | INPUT  | selectEvent(eventID)
+LINK [M6] L2 -> L1 | OUTPUT | eventDetails(title, desc, date, location, rsvpCount, maxCapacity)
+
+LINK [M7] L1 -> L2 | INPUT  | logout()
+LINK [M8] L2 -> L1 | OUTPUT | sessionTerminated
+
+--- CONSTRAINTS ---
+CONSTRAINT: M3 requires valid session from M2
+CONSTRAINT: M5 requires a valid eventID from the list returned in M4
+CONSTRAINT: M6 includes rsvpCount and maxCapacity (read-only, Priya does not RSVP in this scenario)
+CONSTRAINT: System internals (controllers, DB, domain objects) are intentionally not modelled here
+
+
+=== DOMAIN MODEL DIAGRAM: CampusConnect (Full Context) ===
+
+--- NODES (Conceptual Classes) ---
+NODE [C1] Student
+  ATTRIBUTE: name: String
+  ATTRIBUTE: gtID: String
+  ATTRIBUTE: email: String
+  ATTRIBUTE: major: String
+
+NODE [C2] Organization
+  ATTRIBUTE: orgID: String
+  ATTRIBUTE: name: String
+  ATTRIBUTE: description: String
+
+NODE [C3] Event
+  ATTRIBUTE: eventID: String
+  ATTRIBUTE: title: String
+  ATTRIBUTE: description: String
+  ATTRIBUTE: date: DateTime
+  ATTRIBUTE: location: String
+  ATTRIBUTE: maxCapacity: Integer
+
+NODE [C4] Membership
+  ATTRIBUTE: membershipID: String
+  ATTRIBUTE: joinDate: Date
+  ATTRIBUTE: status: {active}
+
+NODE [C5] MembershipRequest
+  ATTRIBUTE: requestID: String
+  ATTRIBUTE: submittedDate: Date
+  ATTRIBUTE: status: {pending, approved, rejected}
+
+NODE [C6] RSVPRegistration
+  ATTRIBUTE: rsvpID: String
+  ATTRIBUTE: rsvpDate: DateTime
+  ATTRIBUTE: status: {active, cancelled}
+
+NODE [C7] OfficerRole
+  ATTRIBUTE: roleID: String
+  ATTRIBUTE: title: String
+  ATTRIBUTE: assignedDate: Date
+
+NODE [C8] PresidentRole
+  ATTRIBUTE: roleID: String
+  ATTRIBUTE: startDate: Date
+  NOTE: one per Organization at any time
+
+--- LINKS (Associations with multiplicity) ---
+LINK [R1]  C1 -> C4  | ASSOCIATION  | "has"          | C1 multiplicity: 1    | C4 multiplicity: *
+LINK [R2]  C2 -> C4  | ASSOCIATION  | "has members"  | C2 multiplicity: 1    | C4 multiplicity: *
+LINK [R3]  C1 -> C5  | ASSOCIATION  | "submits"      | C1 multiplicity: 1    | C5 multiplicity: *
+LINK [R4]  C2 -> C5  | ASSOCIATION  | "receives"     | C2 multiplicity: 1    | C5 multiplicity: *
+LINK [R5]  C2 -> C3  | ASSOCIATION  | "hosts"        | C2 multiplicity: 1..* | C3 multiplicity: 1..*
+LINK [R6]  C1 -> C6  | ASSOCIATION  | "registers"    | C1 multiplicity: 1    | C6 multiplicity: *
+LINK [R7]  C3 -> C6  | ASSOCIATION  | "has"          | C3 multiplicity: 1    | C6 multiplicity: *
+LINK [R8]  C1 -> C7  | ASSOCIATION  | "holds"        | C1 multiplicity: 1    | C7 multiplicity: *
+LINK [R9]  C7 -> C2  | ASSOCIATION  | "for"          | C7 multiplicity: *    | C2 multiplicity: 1
+LINK [R10] C1 -> C8  | ASSOCIATION  | "serves as"    | C1 multiplicity: 1    | C8 multiplicity: 0..1
+LINK [R11] C8 -> C2  | ASSOCIATION  | "leads"        | C8 multiplicity: 1    | C2 multiplicity: 1
+LINK [R12] C8 -> C5  | ASSOCIATION  | "reviews"      | DASHED (derived role responsibility)
+
+--- CONSTRAINTS ---
+CONSTRAINT: A Student may hold PresidentRole in at most ONE Organization at a time (R10)
+CONSTRAINT: An Event's active RSVPRegistration count must not exceed maxCapacity (R7)
+CONSTRAINT: A rejected MembershipRequest is archived but retained in the system
+
+
+
+=== DESIGN CLASS DIAGRAM: Event Creation & RSVP (Scenario 2) ===
+
+--- NODES (Design Classes with visibility, attributes, and methods) ---
+NODE [D1] EventController
+  ATTRIBUTES: none
+  METHOD: +createEvent(officer: OfficerRole, orgID: String, data: EventData): Event
+  METHOD: +rsvpToEvent(student: Student, eventID: String): RSVPRegistration
+  METHOD: +cancelRsvp(student: Student, eventID: String): Boolean
+
+NODE [D2] Event
+  ATTRIBUTE: -eventID: String
+  ATTRIBUTE: -title: String
+  ATTRIBUTE: -date: DateTime
+  ATTRIBUTE: -location: String
+  ATTRIBUTE: -maxCapacity: Integer
+  METHOD: +getAvailableSlots(): Integer
+  METHOD: +isAtCapacity(): Boolean
+  METHOD: +getRsvpCount(): Integer
+  METHOD: +getDetails(): EventDTO
+
+NODE [D3] RSVPRegistration
+  ATTRIBUTE: -rsvpID: String
+  ATTRIBUTE: -rsvpDate: DateTime
+  ATTRIBUTE: -status: RSVPStatus
+  ATTRIBUTE: -student: Student
+  METHOD: +cancel(): void
+  METHOD: +getStatus(): RSVPStatus
+
+NODE [D4] Organization
+  ATTRIBUTE: -orgID: String
+  ATTRIBUTE: -name: String
+  ATTRIBUTE: -president: OfficerRole
+  METHOD: +getPresident(): OfficerRole
+  METHOD: +getEvents(): List<Event>
+  METHOD: +addEvent(event: Event): void
+  METHOD: +getMembers(): List<Student>
+
+NODE [D5] OfficerRole
+  ATTRIBUTE: -student: Student
+  ATTRIBUTE: -organization: Organization
+  ATTRIBUTE: -role: String
+  METHOD: +getStudent(): Student
+  METHOD: +getRole(): String
+
+NODE [D6] Student
+  ATTRIBUTE: -gtID: String
+  ATTRIBUTE: -name: String
+  ATTRIBUTE: -email: String
+  METHOD: +getRsvps(): List<RSVPRegistration>
+  METHOD: +getOrgs(): List<Organization>
+
+--- LINKS (Navigability and dependencies) ---
+LINK [A1] D1 -> D2  | ASSOCIATION  | "creates"        | multiplicity: 1 -> *   | navigable: D1 knows D2
+LINK [A2] D1 -> D4  | DEPENDENCY   | "uses"           | dashed arrow           | D1 calls D4 to validate officer
+LINK [A3] D1 -> D3  | DEPENDENCY   | "manages"        | dashed arrow           | D1 creates/cancels RSVPs
+LINK [A4] D1 -> D6  | DEPENDENCY   | "uses"           | dashed arrow           | D1 receives Student as parameter
+LINK [A5] D4 -> D5  | ASSOCIATION  | "has officers"   | multiplicity: 1 -> *   | navigable: D4 knows D5
+LINK [A6] D4 -> D2  | ASSOCIATION  | "hosts"          | multiplicity: 1..* -> 1..* | navigable: D4 knows D2
+LINK [A7] D2 -> D3  | ASSOCIATION  | "has"            | multiplicity: 1 -> *   | navigable: D2 knows D3
+LINK [A8] D6 -> D3  | ASSOCIATION  | "makes"          | multiplicity: 1 -> *   | navigable: D6 knows D3
+LINK [A9] D5 -> D6  | ASSOCIATION  | "references"     | multiplicity: * -> 1   | navigable: D5 knows D6
+
+--- CONSTRAINTS ---
+CONSTRAINT: D2.isAtCapacity() must return true before EventController rejects an RSVP
+CONSTRAINT: D3.cancel() triggers a capacity update; EventController re-checks via D2.getAvailableSlots()
+CONSTRAINT: Only an OfficerRole (D5) linked to the Organization (D4) may call createEvent via D1
+
+
+
+=== USE CASE DIAGRAM: CampusConnect (Scenarios 1, 2, and 3) ===
+
+--- NODES (Actors) ---
+NODE [A1] Jordan   (Actor - Student, Scenario 1 & implied in 2)
+NODE [A2] Maya     (Actor - President, Scenario 1)
+NODE [A3] Daniel   (Actor - Officer, Scenario 2)
+NODE [A4] Priya    (Actor - Student/Member, Scenario 3)
+
+--- NODES (Use Cases, inside system boundary) ---
+NODE [UC1]  Log in (via external authentication)
+NODE [UC2]  Search for organization
+NODE [UC3]  Submit membership request
+NODE [UC4]  Review membership request
+NODE [UC5]  Approve or reject request
+NODE [UC6]  Send notification
+NODE [UC7]  Create event
+NODE [UC8]  RSVP to event
+NODE [UC9]  Check event capacity
+NODE [UC10] Cancel RSVP
+NODE [UC11] View profile dashboard
+NODE [UC12] View event details
+NODE [UC13] View membership roster
+NODE [UC14] View event attendance list
+NODE [UC15] Log out
+
+--- LINKS (Actor associations) ---
+LINK [P1]  A1 -> UC1  | ASSOCIATION | Jordan uses: Log in
+LINK [P2]  A1 -> UC2  | ASSOCIATION | Jordan uses: Search for organization
+LINK [P3]  A1 -> UC3  | ASSOCIATION | Jordan uses: Submit membership request
+LINK [P4]  A1 -> UC8  | ASSOCIATION | Jordan uses: RSVP to event
+LINK [P5]  A1 -> UC10 | ASSOCIATION | Jordan uses: Cancel RSVP
+LINK [P6]  A1 -> UC15 | ASSOCIATION | Jordan uses: Log out
+
+LINK [P7]  A2 -> UC1  | ASSOCIATION | Maya uses: Log in
+LINK [P8]  A2 -> UC4  | ASSOCIATION | Maya uses: Review membership request
+LINK [P9]  A2 -> UC5  | ASSOCIATION | Maya uses: Approve or reject request
+LINK [P10] A2 -> UC13 | ASSOCIATION | Maya uses: View membership roster
+LINK [P11] A2 -> UC15 | ASSOCIATION | Maya uses: Log out
+
+LINK [P12] A3 -> UC1  | ASSOCIATION | Daniel uses: Log in
+LINK [P13] A3 -> UC7  | ASSOCIATION | Daniel uses: Create event
+LINK [P14] A3 -> UC14 | ASSOCIATION | Daniel uses: View event attendance list
+LINK [P15] A3 -> UC15 | ASSOCIATION | Daniel uses: Log out
+
+LINK [P16] A4 -> UC1  | ASSOCIATION | Priya uses: Log in
+LINK [P17] A4 -> UC11 | ASSOCIATION | Priya uses: View profile dashboard
+LINK [P18] A4 -> UC12 | ASSOCIATION | Priya uses: View event details
+LINK [P19] A4 -> UC15 | ASSOCIATION | Priya uses: Log out
+
+--- LINKS (Include relationships — mandatory sub-behaviors) ---
+LINK [I1] UC4  -> UC5  | INCLUDE | Review membership request includes Approve or reject
+LINK [I2] UC5  -> UC6  | INCLUDE | Approve or reject includes Send notification
+LINK [I3] UC3  -> UC6  | INCLUDE | Submit membership request includes Send notification (on outcome)
+LINK [I4] UC8  -> UC9  | INCLUDE | RSVP to event includes Check event capacity
+LINK [I5] UC10 -> UC9  | INCLUDE | Cancel RSVP includes Check event capacity (to update count)
+LINK [I6] UC11 -> UC12 | INCLUDE | View profile dashboard includes View event details
+
+--- LINKS (Extend relationships — optional/conditional behaviors) ---
+LINK [E1] UC12 -> UC8  | EXTEND  | View event details can extend to RSVP to event (if student chooses)
+
+--- CONSTRAINTS ---
+CONSTRAINT: UC1 (Log in) is a precondition for all other use cases
+CONSTRAINT: UC4 and UC5 are only accessible to an actor holding PresidentRole for that organization
+CONSTRAINT: UC7 is only accessible to an actor holding OfficerRole or PresidentRole
+CONSTRAINT: UC9 is never directly triggered by an actor — always included by UC8 or UC10
+CONSTRAINT: UC15 (Log out) is the terminal use case for every session
