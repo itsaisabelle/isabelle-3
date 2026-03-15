@@ -441,10 +441,10 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
 }
 
 function renderDesignClassDiagram(diagram, selectedEntity, onSelect) {
-  const positions = getGridPositions(diagram.nodes, CANVAS_WIDTH, 140, 3, 280)
+  const positions = getGridPositions(diagram.nodes, CANVAS_WIDTH, 140, 2, 340)
 
   return (
-    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 320}`} className="diagram-svg" role="img" aria-label={diagram.title}>
+    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 540}`} className="diagram-svg" role="img" aria-label={diagram.title}>
       <defs>
         <marker id="arrow-design" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" className="arrowhead-shape" />
