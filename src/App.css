@@ -183,7 +183,35 @@
   letter-spacing: 0.02em;
 }
 
-/* System Sequence Diagram: boundary and readability */
+/* Sequence Diagram (SD): match site UI and readability */
+.diagram-svg.sequence-diagram .sequence-node {
+  fill: rgba(255, 251, 240, 0.98);
+  stroke: var(--node);
+}
+
+.diagram-svg.sequence-diagram .link-label-text {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.diagram-svg.sequence-diagram .node-id {
+  font-size: 16px;
+  font-weight: 800;
+  fill: var(--ink);
+}
+
+.diagram-svg.sequence-diagram .node-label {
+  font-size: 13px;
+  fill: var(--ink-soft);
+}
+
+.diagram-svg.sequence-diagram .lifeline {
+  stroke: var(--line-strong);
+  stroke-dasharray: 6 6;
+}
+
+/* System Sequence Diagram (SSD): boundary and readability */
 .diagram-svg.system-sequence .system-boundary {
   fill: rgba(247, 245, 239, 0.92);
   stroke: var(--line-strong);

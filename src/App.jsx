@@ -292,8 +292,8 @@ function isSystemNode(node) {
 
 function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = false) {
   const lifelineTop = 120
-  const messageStart = 210
-  const messageStep = systemView ? 44 : 32
+  const messageStart = 218
+  const messageStep = systemView ? 44 : 40
   const colGap = CANVAS_WIDTH / (diagram.nodes.length + 1)
   const positions = {}
 
@@ -318,7 +318,7 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
     ? positions[diagram.nodes[systemNodeIndices[systemNodeIndices.length - 1]].id].x + 140
     : 0
 
-  const svgClass = 'diagram-svg' + (systemView ? ' system-sequence' : '')
+  const svgClass = 'diagram-svg' + (systemView ? ' system-sequence' : ' sequence-diagram')
 
   return (
     <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} className={svgClass} role="img" aria-label={diagram.title}>
