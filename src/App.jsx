@@ -320,8 +320,12 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
 
   const svgClass = 'diagram-svg' + (systemView ? ' system-sequence' : ' sequence-diagram')
 
+  const bottomPadding = 100
+  const contentHeight = messageStart + diagram.links.length * messageStep + bottomPadding
+  const seqHeight = Math.max(CANVAS_HEIGHT, contentHeight)
+
   return (
-    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} className={svgClass} role="img" aria-label={diagram.title}>
+    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${seqHeight}`} className={svgClass} role="img" aria-label={diagram.title}>
       <defs>
         <marker id="arrow-seq" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" className="arrowhead-shape" />
@@ -333,7 +337,7 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
           x={systemLeft}
           y={lifelineTop - 58}
           width={systemRight - systemLeft}
-          height={CANVAS_HEIGHT - (lifelineTop - 58) - 40}
+          height={seqHeight - (lifelineTop - 58) - 40}
           rx="14"
           className="system-boundary"
           aria-hidden="true"
@@ -365,7 +369,7 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
             <text x={pos.x} y={pos.y + 2} className="node-label">
               {node.subtitle || node.id}
             </text>
-            <line x1={pos.x} y1={lifelineTop + 18} x2={pos.x} y2={CANVAS_HEIGHT - 50} className="lifeline" />
+            <line x1={pos.x} y1={lifelineTop + 18} x2={pos.x} y2={seqHeight - 50} className="lifeline" />
           </g>
         )
       })}
