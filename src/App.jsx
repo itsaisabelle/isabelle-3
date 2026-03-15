@@ -284,10 +284,16 @@ function getGridPositions(nodes, width, topPadding = 120, cols = 3, rowGap = 220
   return map
 }
 
+function isSystemNode(node) {
+  const sub = (node.subtitle || '').toLowerCase()
+  const label = (node.label || '').toLowerCase()
+  return sub.includes('system') || label.includes('system') || label.includes('black box')
+}
+
 function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = false) {
   const lifelineTop = 120
-  const messageStart = 210
-  const messageStep = 32
+  const messageStart = 218
+  const messageStep = systemView ? 44 : 40
   const colGap = CANVAS_WIDTH / (diagram.nodes.length + 1)
   const positions = {}
 
@@ -298,17 +304,51 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
     }
   })
 
+  const systemNodeIndices = systemView
+    ? diagram.nodes
+        .map((node, i) => (isSystemNode(node) ? i : -1))
+        .filter((i) => i >= 0)
+    : []
+  const hasSystemBlock =
+    systemView && systemNodeIndices.length > 0
+  const systemLeft = hasSystemBlock
+    ? positions[diagram.nodes[systemNodeIndices[0]].id].x - 140
+    : 0
+  const systemRight = hasSystemBlock
+    ? positions[diagram.nodes[systemNodeIndices[systemNodeIndices.length - 1]].id].x + 140
+    : 0
+
+  const svgClass = 'diagram-svg' + (systemView ? ' system-sequence' : ' sequence-diagram')
+
   return (
-    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} className="diagram-svg" role="img" aria-label={diagram.title}>
+    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} className={svgClass} role="img" aria-label={diagram.title}>
       <defs>
         <marker id="arrow-seq" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" className="arrowhead-shape" />
         </marker>
       </defs>
 
+      {hasSystemBlock && (
+        <rect
+          x={systemLeft}
+          y={lifelineTop - 58}
+          width={systemRight - systemLeft}
+          height={CANVAS_HEIGHT - (lifelineTop - 58) - 40}
+          rx="14"
+          className="system-boundary"
+          aria-hidden="true"
+        />
+      )}
+
       {diagram.nodes.map((node) => {
         const pos = positions[node.id]
         const isSelected = selectedEntity?.kind === 'node' && selectedEntity.id === node.id
+        const isSystem = systemView && isSystemNode(node)
+        const nodeClass = isSelected
+          ? 'diagram-node sequence-node selected'
+          : isSystem
+            ? 'diagram-node sequence-node sequence-node-system'
+            : 'diagram-node sequence-node'
         return (
           <g key={node.id} className="node-group" onClick={() => onSelect({ kind: 'node', entity: node })}>
             <rect
@@ -317,7 +357,7 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
               width="236"
               height="64"
               rx="12"
-              className={isSelected ? 'diagram-node sequence-node selected' : 'diagram-node sequence-node'}
+              className={nodeClass}
             />
             <text x={pos.x} y={pos.y - 18} className="node-id">
               {node.title}
@@ -340,9 +380,10 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
         const y = messageStart + index * messageStep
         const isSelected = selectedEntity?.kind === 'link' && selectedEntity.id === link.id
         const centerX = (source.x + target.x) / 2
-        const isReturn = link.relationType.toUpperCase() === 'RETURN'
+        const isReturn = (link.relationType || '').toUpperCase() === 'RETURN'
         const labelText = link.relationLabel || link.id
-        const labelWidth = Math.min(420, Math.max(180, labelText.length * 7.2))
+        const labelWidth = Math.min(420, Math.max(200, labelText.length * 8))
+        const labelHeight = 24
 
         return (
           <g key={link.id} className="link-group" onClick={() => onSelect({ kind: 'link', entity: link })}>
@@ -358,13 +399,13 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
             <line x1={source.x} y1={y} x2={target.x} y2={y} className="link-hitbox" />
             <rect
               x={centerX - labelWidth / 2}
-              y={y - 24}
+              y={y - labelHeight / 2 - 2}
               width={labelWidth}
-              height="20"
-              rx="8"
+              height={labelHeight}
+              rx="10"
               className={isSelected ? 'link-label-bg selected' : 'link-label-bg'}
             />
-            <text x={centerX} y={y - 10} className="link-label-text">
+            <text x={centerX} y={y + 5} className="link-label-text">
               {labelText}
             </text>
           </g>

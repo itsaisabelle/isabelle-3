@@ -164,8 +164,9 @@
 }
 
 .link-label-bg {
-  fill: rgba(255, 255, 255, 0.9);
-  stroke: var(--line);
+  fill: rgba(255, 251, 240, 0.96);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
 }
 
 .link-label-bg.selected {
@@ -175,10 +176,59 @@
 
 .link-label-text {
   text-anchor: middle;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   fill: var(--ink);
   pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+/* Sequence Diagram (SD): match site UI and readability */
+.diagram-svg.sequence-diagram .sequence-node {
+  fill: rgba(255, 251, 240, 0.98);
+  stroke: var(--node);
+}
+
+.diagram-svg.sequence-diagram .link-label-text {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.diagram-svg.sequence-diagram .node-id {
+  font-size: 16px;
+  font-weight: 800;
+  fill: var(--ink);
+}
+
+.diagram-svg.sequence-diagram .node-label {
+  font-size: 13px;
+  fill: var(--ink-soft);
+}
+
+.diagram-svg.sequence-diagram .lifeline {
+  stroke: var(--line-strong);
+  stroke-dasharray: 6 6;
+}
+
+/* System Sequence Diagram (SSD): boundary and readability */
+.diagram-svg.system-sequence .system-boundary {
+  fill: rgba(247, 245, 239, 0.92);
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+
+.diagram-svg.system-sequence .link-label-text {
+  font-size: 13px;
+}
+
+.diagram-svg.system-sequence .node-id {
+  font-size: 15px;
+}
+
+.diagram-svg.system-sequence .node-label {
+  font-size: 12px;
+  fill: var(--ink-soft);
 }
 
 .node-group {
@@ -192,13 +242,21 @@
 }
 
 .sequence-node {
-  fill: rgba(255, 255, 255, 0.96);
+  fill: rgba(255, 251, 240, 0.98);
+  stroke: var(--node);
+  stroke-width: 2;
+  transition: stroke 140ms ease, stroke-width 140ms ease;
+}
+
+.sequence-node-system {
+  fill: rgba(255, 255, 255, 0.98);
+  stroke: var(--node);
 }
 
 .lifeline {
   stroke: var(--line-strong);
-  stroke-dasharray: 7 7;
-  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  stroke-width: 1.8;
 }
 
 .class-node {
@@ -270,11 +328,13 @@
   font-size: 16px;
   font-weight: 800;
   fill: var(--ink);
+  letter-spacing: 0.02em;
 }
 
 .node-label {
   font-size: 13px;
   fill: var(--ink-soft);
+  letter-spacing: 0.01em;
 }
 
 .modal-backdrop {
