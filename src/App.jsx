@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import diagramText from '../diagramstext.txt?raw'
 
@@ -290,7 +290,7 @@ function isSystemNode(node) {
   return sub.includes('system') || label.includes('system') || label.includes('black box')
 }
 
-function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = false) {
+function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = false, playIndex = null) {
   const lifelineTop = 120
   const messageStart = 218
   const messageStep = systemView ? 44 : 40
@@ -387,6 +387,8 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
 
         const y = messageStart + index * messageStep
         const isSelected = selectedEntity?.kind === 'link' && selectedEntity.id === link.id
+        const isPlayed = typeof playIndex === 'number' && index <= playIndex
+        const isCurrent = typeof playIndex === 'number' && index === playIndex
         const centerX = (source.x + target.x) / 2
         const isReturn = (link.relationType || '').toUpperCase() === 'RETURN'
         const labelText = link.relationLabel || link.id
@@ -400,7 +402,9 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
               y1={y}
               x2={target.x}
               y2={y}
-              className={isSelected ? 'diagram-link selected' : 'diagram-link'}
+              className={
+                isSelected ? 'diagram-link selected' : isPlayed ? 'diagram-link played' : 'diagram-link'
+              }
               markerEnd="url(#arrow-seq)"
               strokeDasharray={isReturn ? '7 6' : 'none'}
             />
@@ -411,7 +415,13 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
               width={labelWidth}
               height={labelHeight}
               rx="10"
-              className={isSelected ? 'link-label-bg selected' : 'link-label-bg'}
+              className={
+                isSelected
+                  ? 'link-label-bg selected'
+                  : isCurrent
+                    ? 'link-label-bg current'
+                    : 'link-label-bg'
+              }
             />
             <text x={centerX} y={y + 5} className="link-label-text">
               {labelText}
@@ -1165,15 +1175,15 @@ function renderUseCaseDiagram(diagram, selectedEntity, onSelect) {
   )
 }
 
-function DiagramCanvas({ diagram, selectedEntity, onSelect, diagramIndex }) {
+function DiagramCanvas({ diagram, selectedEntity, onSelect, diagramIndex, playIndex }) {
   const kind = useMemo(() => getDiagramKind(diagram, diagramIndex), [diagram, diagramIndex])
 
   if (kind === 'sequence') {
-    return renderSequenceDiagram(diagram, selectedEntity, onSelect, false)
+    return renderSequenceDiagram(diagram, selectedEntity, onSelect, false, playIndex)
   }
 
   if (kind === 'system-sequence') {
-    return renderSequenceDiagram(diagram, selectedEntity, onSelect, true)
+    return renderSequenceDiagram(diagram, selectedEntity, onSelect, true, playIndex)
   }
 
   if (kind === 'domain-model') {
@@ -1267,11 +1277,51 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState(null)
   const [infoOpen, setInfoOpen] = useState(false)
   const [openPanel, setOpenPanel] = useState('purpose')
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playIndex, setPlayIndex] = useState(null)
 
   const activeDiagram = diagrams[activeTab]
   const teachingMeta = getTeachingMeta(activeDiagram, activeTab, diagrams)
 
   const processPreview = activeDiagram.links.slice(0, 6)
+
+  const isSequenceKind = ['sequence', 'system-sequence'].includes(getDiagramKind(activeDiagram, activeTab))
+
+  useEffect(() => {
+    // Reset playback when switching tabs
+    setIsPlaying(false)
+    setPlayIndex(null)
+    setSelectedEntity(null)
+    setOpenPanel('purpose')
+  }, [activeTab])
+
+  useEffect(() => {
+    if (!isPlaying || !isSequenceKind) {
+      return
+    }
+
+    const total = activeDiagram.links.length
+    if (total === 0) {
+      return
+    }
+
+    const current = typeof playIndex === 'number' ? playIndex : -1
+    if (current >= total - 1) {
+      setIsPlaying(false)
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setPlayIndex((prev) => {
+        const idx = typeof prev === 'number' ? prev : -1
+        return Math.min(idx + 1, total - 1)
+      })
+    }, 1200)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [isPlaying, playIndex, activeDiagram, isSequenceKind])
 
   return (
     <div className="app-shell">
@@ -1415,11 +1465,65 @@ function App() {
         </aside>
 
         <section className="diagram-panel">
+          {isSequenceKind && (
+            <div className="playback-controls" aria-label="Playback controls for messages">
+              <button
+                type="button"
+                className="playback-button"
+                onClick={() => {
+                  setIsPlaying(false)
+                  setPlayIndex((prev) => {
+                    const idx = typeof prev === 'number' ? prev : 0
+                    return Math.max(idx - 1, 0)
+                  })
+                }}
+              >
+                ◀︎
+              </button>
+              <button
+                type="button"
+                className="playback-button primary"
+                onClick={() => {
+                  if (!isPlaying) {
+                    const atEnd =
+                      typeof playIndex === 'number' &&
+                      playIndex >= activeDiagram.links.length - 1
+                    setPlayIndex(atEnd ? 0 : playIndex ?? 0)
+                    setIsPlaying(true)
+                  } else {
+                    setIsPlaying(false)
+                  }
+                }}
+              >
+                {isPlaying ? 'Pause' : 'Play'}
+              </button>
+              <button
+                type="button"
+                className="playback-button"
+                onClick={() => {
+                  setIsPlaying(false)
+                  setPlayIndex((prev) => {
+                    const total = activeDiagram.links.length
+                    if (total === 0) return null
+                    const idx = typeof prev === 'number' ? prev : -1
+                    return Math.min(idx + 1, total - 1)
+                  })
+                }}
+              >
+                ▶︎
+              </button>
+              <span className="playback-status">
+                Step {typeof playIndex === 'number' ? playIndex + 1 : 0} of {activeDiagram.links.length}
+              </span>
+            </div>
+          )}
           <DiagramCanvas
             diagram={activeDiagram}
             selectedEntity={selectedEntity}
             diagramIndex={activeTab}
+            playIndex={isSequenceKind ? playIndex : null}
             onSelect={({ kind, entity }) => {
+              setIsPlaying(false)
               setSelectedEntity({ kind, ...entity })
               setOpenPanel('justification')
             }}

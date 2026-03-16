@@ -160,6 +160,11 @@
   stroke-width: 4;
 }
 
+.diagram-link.played {
+  stroke: var(--focus);
+  stroke-width: 3.4;
+}
+
 .arrowhead-shape {
   fill: var(--link);
 }
@@ -180,6 +185,11 @@
 .link-label-bg.selected {
   stroke: var(--focus);
   stroke-width: 2;
+}
+
+.link-label-bg.current {
+  stroke: var(--focus);
+  stroke-width: 2.4;
 }
 
 .link-label-text {
@@ -393,6 +403,40 @@
 .diagram-node.selected {
   stroke: var(--focus);
   stroke-width: 4;
+}
+
+.playback-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 12px rgba(22, 34, 42, 0.08);
+}
+
+.playback-button {
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--ink-soft);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  min-width: 40px;
+}
+
+.playback-button.primary {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+  font-weight: 700;
+}
+
+.playback-status {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
 }
 
 .node-id,
