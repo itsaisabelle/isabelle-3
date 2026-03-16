@@ -304,19 +304,10 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
     }
   })
 
-  const systemNodeIndices = systemView
-    ? diagram.nodes
-        .map((node, i) => (isSystemNode(node) ? i : -1))
-        .filter((i) => i >= 0)
-    : []
-  const hasSystemBlock =
-    systemView && systemNodeIndices.length > 0
-  const systemLeft = hasSystemBlock
-    ? positions[diagram.nodes[systemNodeIndices[0]].id].x - 140
-    : 0
-  const systemRight = hasSystemBlock
-    ? positions[diagram.nodes[systemNodeIndices[systemNodeIndices.length - 1]].id].x + 140
-    : 0
+  const hasSystemBlock = systemView && diagram.nodes.length > 0
+  const nodeXs = hasSystemBlock ? diagram.nodes.map((node) => positions[node.id].x) : []
+  const systemLeft = hasSystemBlock ? Math.min(...nodeXs) - 160 : 0
+  const systemRight = hasSystemBlock ? Math.max(...nodeXs) + 160 : 0
 
   const svgClass = 'diagram-svg' + (systemView ? ' system-sequence' : ' sequence-diagram')
 
@@ -348,6 +339,9 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
         const pos = positions[node.id]
         const isSelected = selectedEntity?.kind === 'node' && selectedEntity.id === node.id
         const isSystem = systemView && isSystemNode(node)
+        const isPriya =
+          systemView &&
+          (node.title.toLowerCase().includes('priya') || (node.subtitle || '').toLowerCase().includes('priya'))
         const nodeClass = isSelected
           ? 'diagram-node sequence-node selected'
           : isSystem
@@ -355,18 +349,28 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
             : 'diagram-node sequence-node'
         return (
           <g key={node.id} className="node-group" onClick={() => onSelect({ kind: 'node', entity: node })}>
-            <rect
-              x={pos.x - 118}
-              y={pos.y - 46}
-              width="236"
-              height="64"
-              rx="12"
-              className={nodeClass}
-            />
-            <text x={pos.x} y={pos.y - 18} className="node-id">
+            {isPriya ? (
+              <>
+                <circle cx={pos.x} cy={pos.y - 18} r="14" className={nodeClass} />
+                <line x1={pos.x} y1={pos.y - 4} x2={pos.x} y2={pos.y + 24} className="actor-line" />
+                <line x1={pos.x - 16} y1={pos.y + 2} x2={pos.x + 16} y2={pos.y + 2} className="actor-line" />
+                <line x1={pos.x} y1={pos.y + 24} x2={pos.x - 14} y2={pos.y + 46} className="actor-line" />
+                <line x1={pos.x} y1={pos.y + 24} x2={pos.x + 14} y2={pos.y + 46} className="actor-line" />
+              </>
+            ) : (
+              <rect
+                x={pos.x - 118}
+                y={pos.y - 46}
+                width="236"
+                height="64"
+                rx="12"
+                className={nodeClass}
+              />
+            )}
+            <text x={pos.x} y={isPriya ? pos.y + 60 : pos.y - 18} className="node-id">
               {node.title}
             </text>
-            <text x={pos.x} y={pos.y + 2} className="node-label">
+            <text x={pos.x} y={isPriya ? pos.y + 80 : pos.y + 2} className="node-label">
               {node.subtitle || node.id}
             </text>
             <line x1={pos.x} y1={lifelineTop + 18} x2={pos.x} y2={seqHeight - 50} className="lifeline" />
