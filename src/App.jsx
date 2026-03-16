@@ -420,15 +420,162 @@ function renderSequenceDiagram(diagram, selectedEntity, onSelect, systemView = f
 }
 
 function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
-  const positions = getGridPositions(diagram.nodes, CANVAS_WIDTH, 140, 3, 250)
+  const NODE_WIDTH = 264
+  const NODE_HEIGHT = 154
+  const NODE_HALF_WIDTH = NODE_WIDTH / 2
+  const NODE_HALF_HEIGHT = NODE_HEIGHT / 2
+
+  const customPositions = {
+    C1: { x: 220, y: 180 },
+    C2: { x: 800, y: 180 },
+    C3: { x: 1380, y: 180 },
+    C4: { x: 420, y: 500 },
+    C5: { x: 800, y: 500 },
+    C6: { x: 1380, y: 500 },
+    C7: { x: 500, y: 820 },
+    C8: { x: 1100, y: 820 },
+  }
+
+  const fallbackPositions = getGridPositions(diagram.nodes, CANVAS_WIDTH, 140, 3, 250)
+  const positions = {}
+
+  diagram.nodes.forEach((node) => {
+    positions[node.id] = customPositions[node.id] || fallbackPositions[node.id]
+  })
+
+  const cleanRelationshipLabel = (label) => label.replace(/^"|"$/g, '').trim()
+
+  const parseMultiplicity = (notes, classId) => {
+    if (!notes) {
+      return ''
+    }
+    const escapedId = classId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`${escapedId}\\s+multiplicity:\\s*([^|]+)`, 'i')
+    const match = notes.match(regex)
+    return match ? match[1].trim() : ''
+  }
+
+  const domainLinkRouting = {
+    R1: {
+      points: [{ x: 150, y: 257 }, { x: 150, y: 390 }, { x: 320, y: 390 }, { x: 320, y: 423 }],
+      label: { x: 234, y: 382 },
+      sourceMultiplicityPos: { x: 132, y: 276 },
+      targetMultiplicityPos: { x: 334, y: 414 },
+    },
+    R2: { points: [{ x: 450, y: 423 }, { x: 450, y: 300 }, { x: 800, y: 300 }, { x: 800, y: 257 }] },
+    R3: {
+      points: [{ x: 220, y: 257 }, { x: 220, y: 620 }, { x: 860, y: 620 }, { x: 860, y: 577 }],
+      label: { x: 548, y: 612 },
+      sourceMultiplicityPos: { x: 202, y: 276 },
+      targetMultiplicityPos: { x: 874, y: 568 },
+    },
+    R4: { points: [{ x: 800, y: 257 }, { x: 800, y: 423 }] },
+    R5: { points: [{ x: 932, y: 180 }, { x: 1248, y: 180 }] },
+    R6: {
+      points: [{ x: 340, y: 257 }, { x: 580, y: 257 }, { x: 580, y: 700 }, { x: 1360, y: 700 }, { x: 1360, y: 960 }, { x: 1460, y: 960 }, { x: 1460, y: 577 }],
+      label: { x: 972, y: 692 },
+      sourceMultiplicityPos: { x: 322, y: 276 },
+      targetMultiplicityPos: { x: 1474, y: 568 },
+    },
+    R7: { points: [{ x: 1380, y: 257 }, { x: 1380, y: 423 }] },
+    R8: {
+      points: [{ x: 88, y: 180 }, { x: 60, y: 180 }, { x: 60, y: 820 }, { x: 368, y: 820 }],
+      label: { x: 74, y: 496 },
+      sourceMultiplicityPos: { x: 44, y: 168 },
+      targetMultiplicityPos: { x: 382, y: 810 },
+    },
+    R9: {
+      points: [{ x: 520, y: 743 }, { x: 520, y: 660 }, { x: 910, y: 660 }, { x: 910, y: 340 }, { x: 820, y: 340 }, { x: 820, y: 257 }],
+      label: { x: 710, y: 652 },
+      sourceMultiplicityPos: { x: 534, y: 734 },
+      targetMultiplicityPos: { x: 834, y: 276 },
+    },
+    R10: {
+      points: [{ x: 280, y: 257 }, { x: 260, y: 257 }, { x: 260, y: 920 }, { x: 920, y: 920 }, { x: 920, y: 840 }, { x: 968, y: 840 }],
+      label: { x: 592, y: 912 },
+      sourceMultiplicityPos: { x: 262, y: 276 },
+      targetMultiplicityPos: { x: 982, y: 830 },
+    },
+    R11: {
+      points: [{ x: 840, y: 257 }, { x: 840, y: 300 }, { x: 952, y: 300 }, { x: 952, y: 690 }, { x: 1100, y: 690 }, { x: 1100, y: 743 }],
+      label: { x: 968, y: 496 },
+      sourceMultiplicityPos: { x: 854, y: 276 },
+      targetMultiplicityPos: { x: 1114, y: 734 },
+    },
+    R12: {
+      points: [{ x: 932, y: 500 }, { x: 944, y: 500 }, { x: 944, y: 820 }, { x: 968, y: 820 }],
+      label: { x: 958, y: 654 },
+    },
+  }
+
+  const inferBorderSide = (position, point) => {
+    const left = position.x - NODE_HALF_WIDTH
+    const right = position.x + NODE_HALF_WIDTH
+    const top = position.y - NODE_HALF_HEIGHT
+    const bottom = position.y + NODE_HALF_HEIGHT
+
+    if (Math.abs(point.x - left) <= 1) {
+      return 'left'
+    }
+    if (Math.abs(point.x - right) <= 1) {
+      return 'right'
+    }
+    if (Math.abs(point.y - top) <= 1) {
+      return 'top'
+    }
+    return 'bottom'
+  }
+
+  const getLabelPoint = (points) => {
+    if (points.length < 2) {
+      return points[0] || { x: 0, y: 0 }
+    }
+
+    let longest = { a: points[0], b: points[1], length: 0 }
+
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i]
+      const b = points[i + 1]
+      const length = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+      if (length > longest.length) {
+        longest = { a, b, length }
+      }
+    }
+
+    return {
+      x: (longest.a.x + longest.b.x) / 2,
+      y: (longest.a.y + longest.b.y) / 2,
+    }
+  }
+
+  const getMultiplicityPosition = (anchor, side, target = false) => {
+    const inward = target ? -1 : 1
+    if (side === 'top' || side === 'bottom') {
+      return {
+        x: anchor.x + 14,
+        y: anchor.y + (side === 'top' ? -14 : 18) * inward,
+      }
+    }
+    return {
+      x: anchor.x + (side === 'left' ? -18 : 18) * inward,
+      y: anchor.y - 10,
+    }
+  }
+
+  const pathFromPoints = (points) => {
+    if (!points || points.length === 0) {
+      return ''
+    }
+    return points.reduce((acc, point, index) => {
+      if (index === 0) {
+        return `M ${point.x} ${point.y}`
+      }
+      return `${acc} L ${point.x} ${point.y}`
+    }, '')
+  }
 
   return (
-    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 260}`} className="diagram-svg" role="img" aria-label={diagram.title}>
-      <defs>
-        <marker id="arrow-domain" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" className="arrowhead-shape" />
-        </marker>
-      </defs>
+    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 360}`} className="diagram-svg" role="img" aria-label={diagram.title}>
 
       {diagram.links.map((link) => {
         const source = positions[link.source]
@@ -436,25 +583,47 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
         if (!source || !target) {
           return null
         }
+
+        const route = domainLinkRouting[link.id]
+        const points = route?.points || []
+        const path = pathFromPoints(points)
+
         const isSelected = selectedEntity?.kind === 'link' && selectedEntity.id === link.id
-        const labelX = (source.x + target.x) / 2
-        const labelY = (source.y + target.y) / 2
+        const labelPoint = route?.label || getLabelPoint(points)
+        const labelX = labelPoint.x
+        const labelY = labelPoint.y
+        const label = cleanRelationshipLabel(link.relationLabel)
+        const sourceMultiplicity = parseMultiplicity(link.notes, link.source)
+        const targetMultiplicity = parseMultiplicity(link.notes, link.target)
+        const sourceSide = inferBorderSide(source, points[0])
+        const targetSide = inferBorderSide(target, points[points.length - 1])
+        const firstPoint = points[0]
+        const lastPoint = points[points.length - 1]
+        const sourceMultiplicityPos = route?.sourceMultiplicityPos || getMultiplicityPosition(firstPoint, sourceSide)
+        const targetMultiplicityPos = route?.targetMultiplicityPos || getMultiplicityPosition(lastPoint, targetSide, true)
+        const isDashed = /DASHED/i.test(link.notes)
 
         return (
           <g key={link.id} className="link-group" onClick={() => onSelect({ kind: 'link', entity: link })}>
-            <line
-              x1={source.x}
-              y1={source.y}
-              x2={target.x}
-              y2={target.y}
+            <path
+              d={path}
               className={isSelected ? 'diagram-link selected' : 'diagram-link'}
-              markerEnd="url(#arrow-domain)"
+              strokeDasharray={isDashed ? '7 6' : 'none'}
             />
-            <line x1={source.x} y1={source.y} x2={target.x} y2={target.y} className="link-hitbox" />
-            <rect x={labelX - 88} y={labelY - 15} width="176" height="30" rx="8" className="link-label-bg" />
-            <text x={labelX} y={labelY + 5} className="link-label-text">
-              {link.id}: {link.relationLabel.slice(0, 14)}
+            <path d={path} className="link-hitbox" />
+            <text x={labelX} y={labelY + 5} className={isSelected ? 'link-label-text domain-link-label selected' : 'link-label-text domain-link-label'}>
+              {label}
             </text>
+            {sourceMultiplicity ? (
+              <text x={sourceMultiplicityPos?.x ?? firstPoint.x - 12} y={sourceMultiplicityPos?.y ?? firstPoint.y - 10} className="domain-multiplicity">
+                {sourceMultiplicity}
+              </text>
+            ) : null}
+            {targetMultiplicity ? (
+              <text x={targetMultiplicityPos?.x ?? lastPoint.x + 12} y={targetMultiplicityPos?.y ?? lastPoint.y - 10} className="domain-multiplicity">
+                {targetMultiplicity}
+              </text>
+            ) : null}
           </g>
         )
       })}
@@ -465,8 +634,21 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
         const details = node.details.slice(0, 4)
         return (
           <g key={node.id} className="node-group" onClick={() => onSelect({ kind: 'node', entity: node })}>
-            <rect x={pos.x - 132} y={pos.y - 72} width="264" height="154" rx="12" className={isSelected ? 'diagram-node class-node selected' : 'diagram-node class-node'} />
-            <line x1={pos.x - 132} y1={pos.y - 36} x2={pos.x + 132} y2={pos.y - 36} className="class-divider" />
+            <rect
+              x={pos.x - NODE_HALF_WIDTH}
+              y={pos.y - NODE_HALF_HEIGHT}
+              width={NODE_WIDTH}
+              height={NODE_HEIGHT}
+              rx="12"
+              className={isSelected ? 'diagram-node class-node selected' : 'diagram-node class-node'}
+            />
+            <line
+              x1={pos.x - NODE_HALF_WIDTH}
+              y1={pos.y - NODE_HALF_HEIGHT + 36}
+              x2={pos.x + NODE_HALF_WIDTH}
+              y2={pos.y - NODE_HALF_HEIGHT + 36}
+              className="class-divider"
+            />
             <text x={pos.x} y={pos.y - 48} className="node-id">
               {node.title}
             </text>
@@ -475,12 +657,22 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
             </text>
             {details.map((detail, index) => (
               <text key={detail} x={pos.x - 118} y={pos.y + 12 + index * 18} className="class-detail">
-                {detail.replace(/^ATTRIBUTE:\s*/i, '').slice(0, 34)}
+                {detail.replace(/^ATTRIBUTE:\s*/i, '').slice(0, 36)}
               </text>
             ))}
           </g>
         )
       })}
+
+      <g className="domain-constraint-group">
+        <rect x="172" y="1046" width="1256" height="118" rx="12" className="domain-constraint-box" />
+        <text x="800" y="1092" className="domain-constraint-text">
+          Constraint: a Student may hold PresidentRole in at most one Organization at a time.
+        </text>
+        <text x="800" y="1126" className="domain-constraint-text">
+          An Event cannot exceed maxCapacity active RSVPRegistrations.
+        </text>
+      </g>
     </svg>
   )
 }

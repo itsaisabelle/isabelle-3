@@ -231,6 +231,17 @@
   fill: var(--ink-soft);
 }
 
+.domain-link-label {
+  paint-order: stroke;
+  stroke: rgba(248, 248, 244, 0.95);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.domain-link-label.selected {
+  fill: var(--focus);
+}
+
 .node-group {
   cursor: pointer;
 }
@@ -270,6 +281,27 @@
 
 .class-detail {
   font-size: 12px;
+  fill: var(--ink-soft);
+}
+
+.domain-multiplicity {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink-soft);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.domain-constraint-box {
+  fill: rgba(255, 255, 255, 0.86);
+  stroke: var(--line-strong);
+  stroke-width: 1.8;
+}
+
+.domain-constraint-text {
+  font-size: 24px;
+  font-weight: 600;
+  text-anchor: middle;
   fill: var(--ink-soft);
 }
 
