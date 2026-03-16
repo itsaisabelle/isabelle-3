@@ -495,7 +495,7 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
   const domainLinkRouting = {
     R1: {
       points: [{ x: 150, y: 257 }, { x: 150, y: 390 }, { x: 320, y: 390 }, { x: 320, y: 423 }],
-      label: { x: 234, y: 382 },
+      label: { x: 286, y: 382 },
       sourceMultiplicityPos: { x: 132, y: 276 },
       targetMultiplicityPos: { x: 334, y: 414 },
     },
@@ -514,7 +514,10 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
       sourceMultiplicityPos: { x: 236, y: 116 },
       targetMultiplicityPos: { x: 1496, y: 490 },
     },
-    R7: { points: [{ x: 1380, y: 257 }, { x: 1380, y: 423 }] },
+    R7: {
+      points: [{ x: 1380, y: 257 }, { x: 1380, y: 423 }],
+      label: { x: 1442, y: 340 },
+    },
     R8: {
       points: [{ x: 88, y: 180 }, { x: 60, y: 180 }, { x: 60, y: 860 }, { x: 368, y: 860 }],
       label: { x: 220, y: 852 },
@@ -528,14 +531,14 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
       targetMultiplicityPos: { x: 774, y: 276 },
     },
     R10: {
-      points: [{ x: 88, y: 200 }, { x: 32, y: 200 }, { x: 32, y: 820 }, { x: 968, y: 820 }],
-      label: { x: 250, y: 812 },
+      points: [{ x: 88, y: 200 }, { x: 32, y: 200 }, { x: 32, y: 930 }, { x: 1100, y: 930 }, { x: 1100, y: 897 }],
+      label: { x: 566, y: 922 },
       sourceMultiplicityPos: { x: 66, y: 186 },
-      targetMultiplicityPos: { x: 982, y: 810 },
+      targetMultiplicityPos: { x: 1116, y: 922 },
     },
     R11: {
       points: [{ x: 932, y: 200 }, { x: 1000, y: 200 }, { x: 1000, y: 780 }, { x: 1100, y: 780 }, { x: 1100, y: 743 }],
-      label: { x: 1014, y: 520 },
+      label: { x: 1014, y: 560 },
       sourceMultiplicityPos: { x: 916, y: 186 },
       targetMultiplicityPos: { x: 1114, y: 734 },
     },
