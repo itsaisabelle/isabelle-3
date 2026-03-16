@@ -242,6 +242,26 @@
   fill: var(--focus);
 }
 
+.usecase-boundary-title {
+  text-anchor: middle;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.usecase-relationship-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--ink-soft);
+  paint-order: stroke;
+  stroke: rgba(248, 248, 244, 0.96);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.usecase-relationship-label.selected {
+  fill: var(--focus);
+}
+
 .design-link-label,
 .design-link-multiplicity {
   paint-order: stroke;
@@ -384,6 +404,11 @@
   font-size: 13px;
   fill: var(--ink-soft);
   letter-spacing: 0.01em;
+}
+
+.usecase-node-text {
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .modal-backdrop {

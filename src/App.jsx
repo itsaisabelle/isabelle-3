@@ -793,6 +793,39 @@ function getActorAnchor(actorPos, targetPos) {
   return anchors[3]
 }
 
+function getEllipseAnchor(center, target, rx = 128, ry = 44) {
+  const dx = target.x - center.x
+  const dy = target.y - center.y
+  const scale = 1 / Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) || 1)
+
+  return {
+    x: center.x + dx * scale,
+    y: center.y + dy * scale,
+  }
+}
+
+function getActorRoleLabel(node) {
+  const clean = (node.subtitle || '')
+    .replace(/[()]/g, '')
+    .replace(/^Actor\s*-\s*/i, '')
+    .replace(/^External Actor\s*-\s*/i, '')
+    .split(',')[0]
+    .split('/')[0]
+    .trim()
+
+  return clean || node.id
+}
+
+function getUseCaseDisplayLabel(node) {
+  const subtitle = (node.subtitle || '').replace(/^\(|\)$/g, '').trim()
+  if (!subtitle) {
+    return node.title
+  }
+
+  const compactSubtitle = subtitle.replace(/via external authentication/i, 'external auth')
+  return `${node.title} (${compactSubtitle})`
+}
+
 function renderDesignClassDiagram(diagram, selectedEntity, onSelect) {
   const NODE_HALF_WIDTH = 150
   const NODE_HALF_HEIGHT = 95
@@ -801,7 +834,6 @@ function renderDesignClassDiagram(diagram, selectedEntity, onSelect) {
     D4: { x: 260, y: 560 },
     D2: { x: 1220, y: 560 },
     D5: { x: 260, y: 1050 },
-    D6: { x: 760, y: 960 },
     D3: { x: 1220, y: 1050 },
   }
   const fallbackPositions = getGridPositions(diagram.nodes, CANVAS_WIDTH, 140, 2, 340)
@@ -973,44 +1005,75 @@ function renderDesignClassDiagram(diagram, selectedEntity, onSelect) {
 }
 
 function renderUseCaseDiagram(diagram, selectedEntity, onSelect) {
+  const USECASE_RX = 128
+  const USECASE_RY = 44
   const actorNodes = diagram.nodes.filter((node) => /actor/i.test(node.subtitle) || /actor/i.test(node.label))
   const useCaseNodes = diagram.nodes.filter((node) => !actorNodes.includes(node))
 
-  const actorPositions = {}
-  const useCasePositions = {}
+  const actorPositions = {
+    A1: { x: 150, y: 250 },
+    A2: { x: 1450, y: 300 },
+    A3: { x: 1450, y: 700 },
+    A4: { x: 150, y: 1110 },
+  }
+
+  const useCasePositions = {
+    UC1: { x: 780, y: 115 },
+    UC2: { x: 500, y: 270 },
+    UC3: { x: 520, y: 430 },
+    UC4: { x: 1020, y: 345 },
+    UC5: { x: 1035, y: 505 },
+    UC6: { x: 780, y: 645 },
+    UC7: { x: 580, y: 815 },
+    UC8: { x: 945, y: 815 },
+    UC9: { x: 930, y: 965 },
+    UC10: { x: 955, y: 1115 },
+    UC11: { x: 560, y: 1235 },
+    UC12: { x: 590, y: 1375 },
+    UC13: { x: 1020, y: 1275 },
+    UC14: { x: 1025, y: 1415 },
+    UC15: { x: 780, y: 1560 },
+  }
 
   actorNodes.forEach((node, index) => {
-    const side = index % 2 === 0 ? 200 : CANVAS_WIDTH - 200
-    const row = Math.floor(index / 2)
-    actorPositions[node.id] = { x: side, y: 230 + row * 250 }
+    if (!actorPositions[node.id]) {
+      const side = index % 2 === 0 ? 150 : CANVAS_WIDTH - 150
+      const row = Math.floor(index / 2)
+      actorPositions[node.id] = { x: side, y: 250 + row * 360 }
+    }
   })
 
-  const useCols = 3
-  const useGapX = 340
   useCaseNodes.forEach((node, index) => {
-    const row = Math.floor(index / useCols)
-    const col = index % useCols
-    useCasePositions[node.id] = {
-      x: 510 + useGapX * col,
-      y: 200 + row * 190,
+    if (!useCasePositions[node.id]) {
+      const row = Math.floor(index / 3)
+      const col = index % 3
+      useCasePositions[node.id] = { x: 470 + col * 290, y: 230 + row * 160 }
     }
   })
 
   const allPositions = { ...actorPositions, ...useCasePositions }
   const actorIds = new Set(actorNodes.map((n) => n.id))
-  const ucLaneOffsets = computeOrthoLanes(diagram.links, (id) => allPositions[id])
+  const relationshipLabelPositions = {
+    I1: { x: 1010, y: 425 },
+    I2: { x: 908, y: 525 },
+    I3: { x: 575, y: 540 },
+    I4: { x: 965, y: 895 },
+    I5: { x: 1020, y: 1045 },
+    I6: { x: 585, y: 1305 },
+    E1: { x: 795, y: 1148 },
+  }
 
   return (
-    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 500}`} className="diagram-svg" role="img" aria-label={diagram.title}>
+    <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT + 760}`} className="diagram-svg" role="img" aria-label={diagram.title}>
       <defs>
         <marker id="arrow-use" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" className="arrowhead-shape" />
         </marker>
       </defs>
 
-      <rect x="350" y="110" width="1000" height="1000" rx="16" className="system-boundary" />
-      <text x="372" y="142" className="boundary-title">
-        CampusConnect System Boundary
+      <rect x="280" y="20" width="960" height="1610" rx="20" className="system-boundary" />
+      <text x="760" y="44" className="boundary-title usecase-boundary-title">
+        CampusConnect system
       </text>
 
       {diagram.links.map((link) => {
@@ -1021,26 +1084,19 @@ function renderUseCaseDiagram(diagram, selectedEntity, onSelect) {
         }
         const isSelected = selectedEntity?.kind === 'link' && selectedEntity.id === link.id
         const isIncludeOrExtend = /INCLUDE|EXTEND/i.test(link.relationType)
-        const srcPt = actorIds.has(link.source) ? getActorAnchor(rawSrc, rawTgt) : rawSrc
-        const tgtPt = actorIds.has(link.target) ? getActorAnchor(rawTgt, rawSrc) : rawTgt
-        const laneX = (rawSrc.x + rawTgt.x) / 2 + (ucLaneOffsets[link.id] ?? 0)
-        const d = buildOrthoPath(srcPt.x, srcPt.y, tgtPt.x, tgtPt.y, laneX)
-        const labelX = laneX
-        const labelY = (srcPt.y + tgtPt.y) / 2
+        const srcPt = actorIds.has(link.source) ? getActorAnchor(rawSrc, rawTgt) : getEllipseAnchor(rawSrc, rawTgt, USECASE_RX, USECASE_RY)
+        const tgtPt = actorIds.has(link.target) ? getActorAnchor(rawTgt, rawSrc) : getEllipseAnchor(rawTgt, rawSrc, USECASE_RX, USECASE_RY)
+        const d = `M ${srcPt.x} ${srcPt.y} L ${tgtPt.x} ${tgtPt.y}`
 
         return (
-          <g key={link.id} className="link-group" onClick={() => onSelect({ kind: 'link', entity: link })}>
+          <g key={`${link.id}-line`} className="link-group" onClick={() => onSelect({ kind: 'link', entity: link })}>
             <path
               d={d}
               className={isSelected ? 'diagram-link selected' : 'diagram-link'}
-              markerEnd="url(#arrow-use)"
+              markerEnd={isIncludeOrExtend ? 'url(#arrow-use)' : undefined}
               strokeDasharray={isIncludeOrExtend ? '7 6' : 'none'}
             />
             <path d={d} className="link-hitbox" />
-            <rect x={labelX - 90} y={labelY - 15} width="180" height="30" rx="8" className="link-label-bg" />
-            <text x={labelX} y={labelY + 5} className="link-label-text">
-              {link.id}: {link.relationType}
-            </text>
           </g>
         )
       })}
@@ -1059,7 +1115,7 @@ function renderUseCaseDiagram(diagram, selectedEntity, onSelect) {
               {node.title}
             </text>
             <text x={pos.x} y={pos.y + 90} className="node-label">
-              {node.subtitle || node.id}
+              {getActorRoleLabel(node)}
             </text>
           </g>
         )
@@ -1070,12 +1126,33 @@ function renderUseCaseDiagram(diagram, selectedEntity, onSelect) {
         const isSelected = selectedEntity?.kind === 'node' && selectedEntity.id === node.id
         return (
           <g key={node.id} className="node-group" onClick={() => onSelect({ kind: 'node', entity: node })}>
-            <ellipse cx={pos.x} cy={pos.y} rx="128" ry="44" className={isSelected ? 'usecase-node selected' : 'usecase-node'} />
-            <text x={pos.x} y={pos.y - 2} className="node-id">
-              {node.title}
+            <ellipse cx={pos.x} cy={pos.y} rx={USECASE_RX} ry={USECASE_RY} className={isSelected ? 'usecase-node selected' : 'usecase-node'} />
+            <text x={pos.x} y={pos.y + 5} className="node-id usecase-node-text">
+              {getUseCaseDisplayLabel(node)}
             </text>
-            <text x={pos.x} y={pos.y + 18} className="node-label">
-              {node.id}
+          </g>
+        )
+      })}
+
+      {diagram.links.map((link) => {
+        const rawSrc = allPositions[link.source]
+        const rawTgt = allPositions[link.target]
+        if (!rawSrc || !rawTgt || !/INCLUDE|EXTEND/i.test(link.relationType)) {
+          return null
+        }
+
+        const isSelected = selectedEntity?.kind === 'link' && selectedEntity.id === link.id
+        const srcPt = actorIds.has(link.source) ? getActorAnchor(rawSrc, rawTgt) : getEllipseAnchor(rawSrc, rawTgt, USECASE_RX, USECASE_RY)
+        const tgtPt = actorIds.has(link.target) ? getActorAnchor(rawTgt, rawSrc) : getEllipseAnchor(rawTgt, rawSrc, USECASE_RX, USECASE_RY)
+        const labelPos = relationshipLabelPositions[link.id] || {
+          x: (srcPt.x + tgtPt.x) / 2,
+          y: (srcPt.y + tgtPt.y) / 2,
+        }
+
+        return (
+          <g key={`${link.id}-label`} className="link-group" onClick={() => onSelect({ kind: 'link', entity: link })}>
+            <text x={labelPos.x} y={labelPos.y} className={isSelected ? 'link-label-text usecase-relationship-label selected' : 'link-label-text usecase-relationship-label'}>
+              {link.relationType === 'EXTEND' ? '<<extend>>' : '<<include>>'}
             </text>
           </g>
         )
