@@ -6,16 +6,26 @@ const CANVAS_WIDTH = 1600
 const CANVAS_HEIGHT = 980
 
 const PURPOSE_HINTS = {
-  'SEQUENCE DIAGRAM':
-    'Shows time-ordered interactions between actors and system components for a concrete scenario.',
-  'SYSTEM SEQUENCE DIAGRAM':
-    'Focuses on system boundaries by showing external actor inputs and system outputs, while hiding internals.',
-  'DOMAIN MODEL DIAGRAM':
-    'Captures key conceptual entities and stable business relationships that stay true across features.',
-  'DESIGN CLASS DIAGRAM':
-    'Translates concepts into implementable classes, methods, responsibilities, and dependencies.',
-  'USE CASE DIAGRAM':
-    'Summarizes functional goals from the user perspective and clarifies actor-to-system capabilities.',
+  'SEQUENCE DIAGRAM': `Sequence Diagram (SD) - Scenario 2
+The sequence diagram's purpose is to show how the internal components of CampusConnect collaborate over time to fulfill a specific scenario. It answers the question: who calls whom, in what order, and what do they pass back and forth? Rather than showing what the system does from the outside, it exposes the choreography happening inside - which objects are active at each moment, which are waiting, and how control flows between them.
+
+In Scenario 2, the SD is particularly important because the scenario has a non-trivial execution path. Daniel creating an event is straightforward, but the RSVP flow has conditional branching: one student succeeds, another is rejected because capacity is full, a cancellation occurs, and then a previously-rejected student succeeds on a second attempt. A sequence diagram is the right tool here because it makes that branching and ordering explicit. You can read down the diagram and see exactly why Student B fails the first time (M15 returns capacityFull) and why they succeed the second time (M23 returns capacityOK after M19 updates the count). Without the SD, the capacity enforcement logic - which is the most important behavioral requirement in Scenario 2 - would remain ambiguous. The diagram also clarifies that the UI layer and the backend EventController are distinct, meaning the capacity check is not a client-side validation but a server-enforced rule, which has real implications for system integrity.`,
+  'SYSTEM SEQUENCE DIAGRAM': `System Sequence Diagram (SSD) - Scenario 3
+The SSD's purpose is to define the external contract between an actor and the system as a whole, without committing to any internal design decisions. It treats CampusConnect as a single black box and asks: what inputs does the actor send, and what outputs does the system promise to return? This makes it a boundary-specification tool rather than a design tool - it establishes what the system must do before anyone decides how it will do it.
+
+In Scenario 3, Priya's interaction is well-suited for an SSD because her session is a clean, linear sequence of requests and responses with no branching. The SSD captures the fact that viewProfileDashboard() must return both an org list and an upcoming events list in a single response (as stated in the scenario), and that selectEvent() must return rsvpCount alongside the standard event fields because Priya specifically views "the number of students currently registered." These are interface obligations - the system is contractually required to return this data regardless of how it retrieves it internally. The SSD also makes it explicit that Priya never submits an RSVP in this scenario, which is a meaningful boundary: the system exposes read-only event data to her, and that is all. This distinction would be lost in a more implementation-focused diagram.`,
+  'DOMAIN MODEL DIAGRAM': `Domain Model Diagram (DMD) - Full Context
+The DMD's purpose is to identify and define the real-world concepts that the system must represent, along with the relationships and rules that govern them, entirely independent of any technology or implementation. It answers: what things exist in this problem domain, what do we know about each of them, and how are they related to one another? It is a shared vocabulary diagram - the conceptual foundation that every other diagram builds on.
+
+For CampusConnect, the DMD is especially valuable because the problem description is rich with inter-related concepts that carry precise rules. A student can belong to multiple organizations but can only be president of one at a time. An event belongs to one or more organizations. A rejected membership request is archived but not deleted. These are domain rules, not design decisions, and the DMD is where they are formally recorded. The DMD also surfaces the distinction between Membership (the confirmed, ongoing state of belonging to an organization) and MembershipRequest (the temporary, reviewable application to join), which is a nuance that could easily be collapsed into a single concept but should not be - Scenario 1 makes clear they have different lifecycles, different statuses, and different actors interacting with them. Without the DMD, later diagrams like the DCD would lack a principled basis for their class structures.`,
+  'DESIGN CLASS DIAGRAM': `Design Class Diagram (DCD) - Scenario 2
+The DCD's purpose is to translate the conceptual understanding from the DMD into a concrete, implementable software design. It answers: what classes will actually exist in the code, what data will they hold, what operations will they expose, and how will they navigate to one another? Where the DMD is technology-neutral and actor-neutral, the DCD is explicitly about software structure - visibility modifiers, typed method signatures, and directional navigation arrows all reflect real implementation choices.
+
+In Scenario 2, the DCD is centered on the event creation and RSVP lifecycle, and it makes several design decisions that are not apparent from the DMD alone. The decision to introduce EventController as a coordinating class means that Event, Organization, and RSVPRegistration remain focused domain objects rather than taking on request-handling responsibilities. The placement of isAtCapacity() and getAvailableSlots() on Event rather than on the controller reflects the principle that an object should own logic about its own state - the event knows its own capacity. The DCD also establishes that RSVPRegistration has a cancel() method, which means cancellation is a behavior the registration record performs on itself rather than something the controller does to it from the outside. Each of these decisions has downstream consequences for how Scenario 2's capacity enforcement plays out in code, and the DCD is where those decisions are made visible and reviewable before implementation begins.`,
+  'USE CASE DIAGRAM': `Use Case Diagram (UCD) - Scenarios 1, 2, and 3
+The UCD's purpose is to establish the functional scope of the system from the perspective of its users. It answers: who interacts with the system, what can each of them do, and which behaviors are mandatory sub-parts or optional extensions of others? The UCD does not describe how anything works internally - it is purely about what the system offers and to whom, making it the most accessible diagram for stakeholders who are not technical.
+
+Across all three scenarios, the UCD serves as the unified functional map of CampusConnect. Scenario 1 contributes the membership lifecycle use cases (UC2 through UC6) and establishes that Maya and Jordan have different access levels to those use cases. Scenario 2 contributes the event management and RSVP use cases (UC7 through UC10) and introduces Daniel as a third actor type with a distinct permission profile. Scenario 3 contributes the discovery and browsing use cases (UC11, UC12) that represent the read-only, member-facing side of the system. Together, the three scenarios cover five distinct actors and fifteen use cases, and the UCD is the only diagram that shows all of them in one place. The include and extend relationships are particularly meaningful here: <<include>> on UC8->UC9 makes it clear that capacity checking is not optional - it is a mandatory system behavior baked into every RSVP attempt - while <<extend>> on UC12->UC8 captures the fact that viewing event details does not guarantee a registration will follow, as Priya's behavior in Scenario 3 demonstrates.`,
 }
 
 function normalizeId(id) {
@@ -1310,7 +1320,11 @@ function App() {
             </button>
             {openPanel === 'purpose' && (
               <div className="accordion-content">
-                <p>{teachingMeta.purpose}</p>
+                {teachingMeta.purpose
+                  .split('\n\n')
+                  .map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
               </div>
             )}
           </section>
@@ -1393,21 +1407,6 @@ function App() {
             )}
           </section>
 
-          <section className={openPanel === 'additional' ? 'accordion-panel open' : 'accordion-panel'}>
-            <button
-              type="button"
-              className="accordion-header"
-              onClick={() => setOpenPanel(openPanel === 'additional' ? null : 'additional')}
-              aria-expanded={openPanel === 'additional'}
-            >
-              Additional text
-            </button>
-            {openPanel === 'additional' && (
-              <div className="accordion-content">
-                <p>{teachingMeta.dropdownText}</p>
-              </div>
-            )}
-          </section>
         </aside>
 
         <section className="diagram-panel">
