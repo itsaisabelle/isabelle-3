@@ -509,9 +509,9 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
     R4: { points: [{ x: 800, y: 257 }, { x: 800, y: 423 }] },
     R5: { points: [{ x: 932, y: 180 }, { x: 1248, y: 180 }] },
     R6: {
-      points: [{ x: 352, y: 200 }, { x: 1540, y: 200 }, { x: 1540, y: 500 }, { x: 1512, y: 500 }],
-      label: { x: 1540, y: 360 },
-      sourceMultiplicityPos: { x: 370, y: 186 },
+      points: [{ x: 220, y: 103 }, { x: 220, y: 80 }, { x: 1540, y: 80 }, { x: 1540, y: 500 }, { x: 1512, y: 500 }],
+      label: { x: 884, y: 72 },
+      sourceMultiplicityPos: { x: 236, y: 116 },
       targetMultiplicityPos: { x: 1496, y: 490 },
     },
     R7: { points: [{ x: 1380, y: 257 }, { x: 1380, y: 423 }] },
@@ -540,8 +540,8 @@ function renderDomainModelDiagram(diagram, selectedEntity, onSelect) {
       targetMultiplicityPos: { x: 1114, y: 734 },
     },
     R12: {
-      points: [{ x: 932, y: 500 }, { x: 944, y: 500 }, { x: 944, y: 820 }, { x: 968, y: 820 }],
-      label: { x: 958, y: 654 },
+      points: [{ x: 932, y: 500 }, { x: 1140, y: 500 }, { x: 1140, y: 780 }, { x: 968, y: 780 }],
+      label: { x: 1120, y: 636 },
     },
   }
 
